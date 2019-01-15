@@ -3,59 +3,54 @@
 const express = require('express');
 const mongoose = require('mongoose');
 
+const router = express.Router();
 const User = require('../models/user');
 
-const router = express.Router();
 
+/* ========== POST USERS ========== */
 router.post('/', (req, res, next) => {
-  let {username, password, fullname } = req.body;
+  const {fullname, username, password} = req.body;
+  
   const requiredFields = ['username', 'password'];
   const missingField = requiredFields.find(field => !(field in req.body));
 
   if (missingField) {
-    const err = new Error(`Missing '${missingField}' in request body`);
+    const err = new Error('Missing field in body');
     err.status = 422;
     return next(err);
   }
 
   const stringFields = ['username', 'password', 'fullname'];
-  const nonStringField = stringFields.find(
-    field => field in req.body && typeof req.body[field] !== 'string'
-  );
+  const nonStringField = stringFields.find(field => {
+    field in req.body && typeof req.body[field] !== 'string';
+  });
 
   if (nonStringField) {
-    return res.status(422).json({
-      code: 422,
-      reason: 'ValidationError',
-      message: 'Incorrect field type: expected string',
-      location: nonStringField
-    });
+    const err = new Error('Incorrect field type: expected string');
+    err.status = 422;
+    return next(err);
   }
 
-  const explicityTrimmedFields = ['username', 'password', 'fullname'];
-  const nonTrimmedField = explicityTrimmedFields.find(
-    field => req.body[field].trim() !== req.body[field]
-  );
+  const explicitlyTrimmedFields = ['username', 'password'];
+  const nonTrimmedField = explicitlyTrimmedFields.find(field => {
+    req.body[field].trim() !== req.body[field];
+  });
 
   if (nonTrimmedField) {
-    return res.status(422).json({
-      code: 422,
-      reason: 'ValidationError',
-      message: 'Cannot start or end with whitespace',
-      location: nonTrimmedField
-    });
+    const err = new Error('Cannot start or end with whitespace');
+    err.status = 422;
+    return next(err);
   }
 
   const sizedFields = {
     username: {
-      min: 1
+      min: 2
     },
     password: {
       min: 8,
       max: 72
     }
   };
-
   const tooSmallField = Object.keys(sizedFields).find(
     field =>
       'min' in sizedFields[field] &&
@@ -80,7 +75,8 @@ router.post('/', (req, res, next) => {
     });
   }
 
-  return User.hashPassword(password)
+  User
+    .hashPassword(password)
     .then(digest => {
       const newUser = {
         username,
@@ -89,8 +85,10 @@ router.post('/', (req, res, next) => {
       };
       return User.create(newUser);
     })
-    .then(result => {
-      return res.status(201).location(`http://${req.headers.host}/api/users/${result.id}`).json(result);
+    .then(users => {
+      res.location(`${req.originalUrl}/${users.id}`)
+        .status(201)
+        .json(users);
     })
     .catch(err => {
       if (err.code === 11000) {
@@ -102,4 +100,3 @@ router.post('/', (req, res, next) => {
 });
 
 module.exports = router;
-
