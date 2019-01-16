@@ -75,7 +75,7 @@ router.post('/', (req, res, next) => {
     });
   }
 
- return User
+  return User
     .hashPassword(password)
     .then(digest => {
       const newUser = {
