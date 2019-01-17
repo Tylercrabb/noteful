@@ -15,14 +15,14 @@ router.post('/', (req, res, next) => {
   const missingField = requiredFields.find(field => !(field in req.body));
 
   if (missingField) {
-    const err = new Error('Missing field in body');
+    const err = new Error(`Missing ${missingField} in request body`);
     err.status = 422;
     return next(err);
   }
 
   const stringFields = ['username', 'password', 'fullname'];
   const nonStringField = stringFields.find(field => {
-    field in req.body && typeof req.body[field] !== 'string';
+    return field in req.body && typeof req.body[field] !== 'string';
   });
 
   if (nonStringField) {
@@ -32,9 +32,9 @@ router.post('/', (req, res, next) => {
   }
 
   const explicitlyTrimmedFields = ['username', 'password'];
-  const nonTrimmedField = explicitlyTrimmedFields.find(field => {
-    req.body[field].trim() !== req.body[field];
-  });
+  const nonTrimmedField = explicitlyTrimmedFields.find(field => 
+    req.body[field].trim() !== req.body[field]
+  );
 
   if (nonTrimmedField) {
     const err = new Error('Cannot start or end with whitespace');

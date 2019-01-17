@@ -5,39 +5,51 @@ const chaiHttp = require('chai-http');
 const mongoose = require('mongoose');
 const express = require('express');
 const sinon = require('sinon');
+const jwt = require('jsonwebtoken');
 
 const app = require('../server');
 const Folder = require('../models/folder');
 const Note = require('../models/note');
-const { folders, notes } = require('../db/data');
+const User = require('../models/user');
+const { folders, notes, users } = require('../db/data');
 const { TEST_MONGODB_URI } = require('../config');
-
+const { JWT_SECRET } = require('../config');
 chai.use(chaiHttp);
 const expect = chai.expect;
 const sandbox = sinon.createSandbox();
-
+let token;
+let user;
 describe('Noteful API - Folders', function () {
-
+  
   before(function () {
     return mongoose.connect(TEST_MONGODB_URI, { useNewUrlParser: true, useCreateIndex : true })
       .then(() => Promise.all([
         Note.deleteMany(),
-        Folder.deleteMany()
+        Folder.deleteMany(),
+        User.deleteMany()
       ]));
   });
 
   beforeEach(function () {
     return Promise.all([
+      User.insertMany(users),
       Folder.insertMany(folders),
       Note.insertMany(notes)
-    ]);
+      
+      
+    ])
+      .then(([users]) => {
+        user = users[0];
+        token = jwt.sign({ user }, JWT_SECRET, { subject: user.username });
+      });
   });
 
   afterEach(function () {
     sandbox.restore();
     return Promise.all([
       Note.deleteMany(), 
-      Folder.deleteMany()
+      Folder.deleteMany(),
+      User.deleteMany()
     ]);
   });
 
@@ -45,12 +57,13 @@ describe('Noteful API - Folders', function () {
     return mongoose.disconnect();
   });
   
-  describe('GET /api/folders', function () {
+  describe.only('GET /api/folders', function () {
 
     it('should return a list sorted with the correct number of folders', function () {
       return Promise.all([
-        Folder.find().sort('name'),
+        Folder.find({ userId: user.id }).sort('name'),
         chai.request(app).get('/api/folders')
+          .set('Authorization', `Bearer ${token}`)
       ])
         .then(([data, res]) => {
           expect(res).to.have.status(200);
