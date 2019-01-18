@@ -374,10 +374,11 @@ describe('Noteful API - Tags', function () {
       sandbox.stub(Tag.schema.options.toJSON, 'transform').throws('FakeError');
 
       const updateItem = { name: 'Updated Name' };
-      return Tag.findOne({userid: user.id})
+      return Tag.findOne()
         .then(data => {
           return chai.request(app)
             .put(`/api/tags/${data.id}`)
+            .set('Authorization', `Bearer ${token}`)
             .send(updateItem);
         })
         .then(res => {

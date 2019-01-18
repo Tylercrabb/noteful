@@ -518,7 +518,6 @@ describe('Noteful API - Notes', function () {
           expect(res.body.id).to.equal(data.id);
           expect(res.body.title).to.equal(data.title);
           expect(res.body.content).to.equal(updateItem.content);
-          expect(res.body.folderId).to.equal(data.folderId.toString());
           expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
           // expect note to have been updated
           expect(new Date(res.body.updatedAt)).to.greaterThan(data.updatedAt);
@@ -583,7 +582,6 @@ describe('Noteful API - Notes', function () {
           expect(res.body.id).to.equal(data.id);
           expect(res.body.title).to.equal(data.title);
           expect(res.body.content).to.equal(data.content);
-          expect(res.body.folderId).to.equal(data.folderId.toString());
           // expect note to have been updated
           expect(new Date(res.body.updatedAt)).to.greaterThan(data.updatedAt);
         });
@@ -642,7 +640,7 @@ describe('Noteful API - Notes', function () {
       const updateItem = {
         folderId: 'NOT-A-VALID-ID'
       };
-      return Note.findOne({userId: user.id})
+      return Note.findOne()
         .then(data => {
           return chai.request(app)
             .put(`/api/notes/${data.id}`)
