@@ -121,7 +121,7 @@ router.get('/:id', (req, res, next) => {
 });
 
 /* ========== POST/CREATE AN ITEM ========== */
-router.post('/', validateFolders, validateTags, (req, res, next) => {
+router.post('/', (req, res, next) => {
   const { title, content, folderId, tags } = req.body;
   const userId = req.user.id;
   
@@ -139,14 +139,14 @@ router.post('/', validateFolders, validateTags, (req, res, next) => {
   }
  
 
-  // if (tags) {
-  //   const badIds = tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
-  //   if (badIds.length) {
-  //     const err = new Error('The `tags` array contains an invalid `id`');
-  //     err.status = 400;
-  //     return next(err);
-  //   }
-  // }
+  if (tags) {
+    const badIds = tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
+    if (badIds.length) {
+      const err = new Error('The `tags` array contains an invalid `id`');
+      err.status = 400;
+      return next(err);
+    }
+  }
 
   const newNote = { title, content, folderId, tags, userId };
   if (newNote.folderId === '') {
@@ -163,11 +163,11 @@ router.post('/', validateFolders, validateTags, (req, res, next) => {
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */
-router.put('/:id',validateFolders, validateTags, (req, res, next) => {
+router.put('/:id',  (req, res, next) => {
   const { id } = req.params;
   const userId = req.user.id;
 
-  const toUpdate = {};
+  const toUpdate = { userId };
   const updateableFields = ['title', 'content', 'folderId', 'tags'];
 
   updateableFields.forEach(field => {
@@ -189,14 +189,14 @@ router.put('/:id',validateFolders, validateTags, (req, res, next) => {
     return next(err);
   }
 
-  // if (toUpdate.tags) {
-  //   const badIds = toUpdate.tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
-  //   if (badIds.length) {
-  //     const err = new Error('The `tags` array contains an invalid `id`');
-  //     err.status = 400;
-  //     return next(err);
-  //   }
-  // }
+  if (toUpdate.tags) {
+    const badIds = toUpdate.tags.filter((tag) => !mongoose.Types.ObjectId.isValid(tag));
+    if (badIds.length) {
+      const err = new Error('The `tags` array contains an invalid `id`');
+      err.status = 400;
+      return next(err);
+    }
+  }
 
   if (!toUpdate.folderId) {
     delete toUpdate.folderId;

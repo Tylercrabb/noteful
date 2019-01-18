@@ -79,6 +79,7 @@ router.put('/:id', (req, res, next) => {
   const { id } = req.params;
   const { name } = req.body;
   const userId = req.user.id;
+
   /***** Never trust users - validate input *****/
   if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
@@ -92,9 +93,10 @@ router.put('/:id', (req, res, next) => {
     return next(err);
   }
 
+  const filter = {$and: [{_id: id}, {userId}]};
   const updateTag = { name };
 
-  Tag.findOneAndUpdate({ _id: id, userId }, updateTag, { new: true })
+  Tag.findOneAndUpdate(filter, updateTag, { new: true })
     .then(result => {
       if (result) {
         res.json(result);
@@ -110,6 +112,7 @@ router.put('/:id', (req, res, next) => {
       next(err);
     });
 });
+
 
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
